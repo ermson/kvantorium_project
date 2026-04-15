@@ -1,0 +1,83 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-users"></i> Ученики</h2>
+    <a href="{% url 'student_create' %}" class="btn btn-success">
+        <i class="fas fa-plus"></i> Новый ученик
+    </a>
+</div>
+
+<!-- Форма поиска и фильтрации -->
+<div class="card shadow mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-6">
+                <label for="search" class="form-label">Поиск по ФИО</label>
+                <input type="text" name="search" id="search" class="form-control"
+                       placeholder="Введите фамилию, имя или отчество..."
+                       value="{{ search_query }}">
+            </div>
+            <div class="col-md-4">
+                <label for="group" class="form-label">Фильтр по направлению</label>
+                <select name="group" id="group" class="form-select">
+                    <option value="">Все направления</option>
+                    {% for group in groups %}
+                    <option value="{{ group }}" {% if group_filter == group %}selected{% endif %}>
+                        {{ group }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search"></i> Искать
+                </button>
+                <a href="{% url 'student_list' %}" class="btn btn-secondary w-100 ms-2">
+                    <i class="fas fa-times"></i> Сброс
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Таблица с учениками -->
+<div class="card shadow">
+    <div class="card-body">
+        <table class="table table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Фамилия</th>
+                    <th>Имя</th>
+                    <th>Отчество</th>
+                    <th>Направление</th>
+                    <th>Наставник</th>
+                    <th>Дата поступления</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in students %}
+                <tr>
+                    <td><a href="{% url 'student_detail' student.id %}">{{ student.last_name }}</a></td>
+                    <td>{{ student.first_name }}</td>
+                    <td>{{ student.middle_name|default:"—" }}</td>
+                    <td>{{ student.group_name }}</td>
+                    <td>{{ student.mentor.user.last_name }} {{ student.mentor.user.first_name }}</td>
+                    <td>{{ student.enrollment_date|date:"d.m.Y" }}</td>
+                    <td>
+                        <a href="{% url 'student_edit' student.id %}" class="text-warning"><i class="fas fa-edit"></i></a>
+                        <a href="{% url 'student_delete' student.id %}" class="text-danger"><i class="fas fa-trash"></i></a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center">Нет учеников</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <p class="text-muted mt-3">Найдено: {{ students|length }} учеников</p>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+﻿{% extends 'core/base.html' %}
+
+{% block content %}
+<div style="background-color: #1abc9c; color: white; padding: 50px; text-align: center; margin: 20px;">
+    <h1>ДАШБОРД КВАНТОРИУМА</h1>
+    <p>Если вы видите этот зелёный блок, значит шаблон работает!</p>
+    <p>Вы вошли как: {{ user.username }}</p>
+</div>
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h3>{{ students_count }}</h3>
+                    <p>Всего учеников</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h3>{{ projects_count }}</h3>
+                    <p>Всего проектов</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h3>{{ in_progress_count }}</h3>
+                    <p>Проектов в работе</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <h3>{{ urgent_stages }}</h3>
+                    <p>Срочных этапов</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

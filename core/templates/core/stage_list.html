@@ -1,0 +1,87 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-tasks"></i> Этапы проектов</h2>
+    <a href="{% url 'stage_create' %}" class="btn btn-success">
+        <i class="fas fa-plus"></i> Новый этап
+    </a>
+</div>
+
+<!-- Форма поиска и фильтрации -->
+<div class="card shadow mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-6">
+                <label for="search" class="form-label">Поиск по названию этапа</label>
+                <input type="text" name="search" id="search" class="form-control"
+                       placeholder="Введите название этапа..." value="{{ search_query }}">
+            </div>
+            <div class="col-md-4">
+                <label for="completed" class="form-label">Фильтр по выполнению</label>
+                <select name="completed" id="completed" class="form-select">
+                    <option value="">Все этапы</option>
+                    <option value="not_completed" {% if completed_filter == 'not_completed' %}selected{% endif %}>
+                        Не выполненные
+                    </option>
+                    <option value="completed" {% if completed_filter == 'completed' %}selected{% endif %}>
+                        Выполненные
+                    </option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search"></i> Искать
+                </button>
+                <a href="{% url 'stage_list' %}" class="btn btn-secondary w-100 ms-2">
+                    <i class="fas fa-times"></i> Сброс
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Таблица с этапами -->
+<div class="card shadow">
+    <div class="card-body">
+        <table class="table table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Проект</th>
+                    <th>Этап</th>
+                    <th>Плановая дата</th>
+                    <th>Фактическая дата</th>
+                    <th>Статус</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stage in stages %}
+                <tr>
+                    <td><a href="{% url 'project_detail' stage.project.id %}">{{ stage.project.name }}</a></td>
+                    <td><a href="{% url 'stage_detail' stage.id %}">{{ stage.stage_name }}</a></td>
+                    <td>{{ stage.planned_date|date:"d.m.Y" }}</td>
+                    <td>{{ stage.actual_date|date:"d.m.Y"|default:"—" }}</td>
+                    <td>
+                        {% if stage.is_completed %}
+                            <span class="badge bg-success">✓ Выполнен</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark">○ В работе</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'stage_edit' stage.id %}" class="text-warning"><i class="fas fa-edit"></i></a>
+                        <a href="{% url 'stage_delete' stage.id %}" class="text-danger"><i class="fas fa-trash"></i></a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center">Нет этапов</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <p class="text-muted mt-3">Найдено: {{ stages|length }} этапов</p>
+    </div>
+</div>
+{% endblock %}

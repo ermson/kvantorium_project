@@ -1,0 +1,50 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<h2 class="mb-4">
+    {% if stage %}Редактировать этап{% else %}Новый этап{% endif %}
+</h2>
+
+<div class="card shadow">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="project" class="form-label">Проект *</label>
+                <select name="project" id="project" class="form-select" required>
+                    <option value="">Выберите проект</option>
+                    {% for project in projects %}
+                    <option value="{{ project.id }}" {% if stage.project.id == project.id %}selected{% endif %}>
+                        {{ project.name }} ({{ project.student.last_name }} {{ project.student.first_name }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="stage_name" class="form-label">Название этапа *</label>
+                <input type="text" name="stage_name" id="stage_name" class="form-control" value="{{ stage.stage_name|default:'' }}" required>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="planned_date" class="form-label">Плановая дата *</label>
+                    <input type="date" name="planned_date" id="planned_date" class="form-control" value="{{ stage.planned_date|date:'Y-m-d'|default:'' }}" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="actual_date" class="form-label">Фактическая дата</label>
+                    <input type="date" name="actual_date" id="actual_date" class="form-control" value="{{ stage.actual_date|date:'Y-m-d'|default:'' }}">
+                </div>
+            </div>
+            <div class="mb-3 form-check">
+                <input type="checkbox" name="is_completed" id="is_completed" class="form-check-input" {% if stage.is_completed %}checked{% endif %}>
+                <label for="is_completed" class="form-check-label">Этап выполнен</label>
+            </div>
+            <div class="mb-3">
+                <label for="comment" class="form-label">Комментарий наставника</label>
+                <textarea name="comment" id="comment" class="form-control" rows="3">{{ stage.comment|default:'' }}</textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+            <a href="{% url 'stage_list' %}" class="btn btn-secondary">Отмена</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<h2 class="mb-4">
+    {% if project %}Редактировать проект{% else %}Новый проект{% endif %}
+</h2>
+
+<div class="card shadow">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="name" class="form-label">Название проекта</label>
+                <input type="text" name="name" id="name" class="form-control" value="{{ project.name|default:'' }}" required>
+            </div>
+            <div class="mb-3">
+                <label for="description" class="form-label">Описание</label>
+                <textarea name="description" id="description" class="form-control" rows="4">{{ project.description|default:'' }}</textarea>
+            </div>
+            <div class="mb-3">
+                <label for="student" class="form-label">Ученик</label>
+                <select name="student" id="student" class="form-select" required>
+                    <option value="">Выберите ученика</option>
+                    {% for student in students %}
+                    <option value="{{ student.id }}" {% if project.student.id == student.id %}selected{% endif %}>
+                        {{ student.last_name }} {{ student.first_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="status" class="form-label">Статус</label>
+                <select name="status" id="status" class="form-select">
+                    <option value="idea" {% if project.status == 'idea' %}selected{% endif %}>Идея</option>
+                    <option value="development" {% if project.status == 'development' %}selected{% endif %}>В разработке</option>
+                    <option value="review" {% if project.status == 'review' %}selected{% endif %}>На проверке</option>
+                    <option value="completed" {% if project.status == 'completed' %}selected{% endif %}>Завершен</option>
+                    <option value="defended" {% if project.status == 'defended' %}selected{% endif %}>Защищен</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+            <a href="{% url 'project_list' %}" class="btn btn-secondary">Отмена</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

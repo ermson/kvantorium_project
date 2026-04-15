@@ -5,11 +5,33 @@ from core.models import Mentor, Student, Project, ProjectStage
 class MentorAdmin(admin.ModelAdmin):
     list_display = ('user', 'department', 'phone')
     search_fields = ('user__last_name', 'user__first_name')
-
+    fieldsets = (
+        (None, {
+            'fields': ('user', 'phone'),
+            'description': 'Основная информация'
+        }),
+        ('Квантум (факультет)', {
+            'fields': ('department',),
+            'description': 'Крупное направление подготовки'
+        }),
+    )
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
     list_display = ('last_name', 'first_name', 'group_name', 'mentor')
     search_fields = ('last_name', 'first_name')
+    fieldsets = (
+        (None, {
+            'fields': ('last_name', 'first_name', 'middle_name', 'enrollment_date'),
+            'description': 'Личная информация'
+        }),
+        ('Направление (группа)', {
+            'fields': ('group_name',),
+            'description': 'Специализация внутри квантума'
+        }),
+        ('Наставник', {
+            'fields': ('mentor',),
+        }),
+    )
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):

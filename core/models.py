@@ -4,10 +4,8 @@ from django.contrib.auth.models import User  # Встроенная модель
 
 # Модель "Наставник" (расширяет встроенного пользователя)
 class Mentor(models.Model):
-    # Связь один-к-одному со встроенным пользователем Django
     user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name="Пользователь")
-    # Дополнительные поля
-    department = models.CharField(max_length=100, verbose_name="Квантум/направление")
+    department = models.CharField(max_length=100, verbose_name="Квантум")  # факультет
     phone = models.CharField(max_length=20, blank=True, verbose_name="Телефон")
 
     def __str__(self):
@@ -23,8 +21,7 @@ class Student(models.Model):
     last_name = models.CharField(max_length=50, verbose_name="Фамилия")
     first_name = models.CharField(max_length=50, verbose_name="Имя")
     middle_name = models.CharField(max_length=50, blank=True, verbose_name="Отчество")
-    group_name = models.CharField(max_length=50, verbose_name="Группа/Квантум")
-    # Связь с наставником (один наставник может вести много учеников)
+    group_name = models.CharField(max_length=50, verbose_name="Направление")  # группа
     mentor = models.ForeignKey(Mentor, on_delete=models.SET_NULL, null=True, verbose_name="Наставник")
     enrollment_date = models.DateField(verbose_name="Дата поступления")
 

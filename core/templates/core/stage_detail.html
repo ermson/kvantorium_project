@@ -1,0 +1,43 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-list-check"></i> {{ stage.stage_name }}</h2>
+    <div>
+        <a href="{% url 'stage_edit' stage.id %}" class="btn btn-warning">
+            <i class="fas fa-edit"></i> Редактировать
+        </a>
+        <a href="{% url 'stage_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Назад
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Информация об этапе</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Проект:</strong> <a href="{% url 'project_detail' stage.project.id %}">{{ stage.project.name }}</a></p>
+                <p><strong>Ученик:</strong> {{ stage.project.student.last_name }} {{ stage.project.student.first_name }}</p>
+                <p><strong>Плановая дата:</strong> {{ stage.planned_date|date:"d.m.Y" }}</p>
+                <p><strong>Фактическая дата:</strong> {{ stage.actual_date|date:"d.m.Y"|default:"—" }}</p>
+                <p>
+                    <strong>Статус:</strong>
+                    {% if stage.is_completed %}
+                        <span class="badge bg-success">Выполнен</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark">В работе</span>
+                    {% endif %}
+                </p>
+                <p><strong>Комментарий наставника:</strong></p>
+                <div class="alert alert-secondary">
+                    {{ stage.comment|default:"Нет комментария" }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

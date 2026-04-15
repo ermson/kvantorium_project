@@ -1,0 +1,65 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-user-graduate"></i> {{ student.last_name }} {{ student.first_name }}</h2>
+    <div>
+        <a href="{% url 'student_edit' student.id %}" class="btn btn-warning">
+            <i class="fas fa-edit"></i> Редактировать
+        </a>
+        <a href="{% url 'student_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Назад
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Личная информация</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Фамилия:</strong> {{ student.last_name }}</p>
+                <p><strong>Имя:</strong> {{ student.first_name }}</p>
+                <p><strong>Отчество:</strong> {{ student.middle_name|default:"—" }}</p>
+                <p><strong>Направление:</strong> {{ student.group_name }}</p>
+                <small class="text-muted">Группа — специализация внутри квантума</small>
+                <p><strong>Наставник:</strong> {{ student.mentor.user.last_name }} {{ student.mentor.user.first_name }}</p>
+                <p><strong>Дата поступления:</strong> {{ student.enrollment_date|date:"d.m.Y" }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Проекты ученика</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-hover">
+                    <thead>
+                        <tr><th>Название</th><th>Статус</th><th>Дата создания</th><th>Действия</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for project in projects %}
+                        <tr>
+                            <td><a href="{% url 'project_detail' project.id %}">{{ project.name }}</a></td>
+                            <td><span class="badge bg-secondary">{{ project.get_status_display }}</span></td>
+                            <td>{{ project.created_at|date:"d.m.Y" }}</td>
+                            <td>
+                                <a href="{% url 'project_edit' project.id %}" class="text-warning"><i class="fas fa-edit"></i></a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="text-center">Нет проектов</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <a href="{% url 'project_create' %}?student={{ student.id }}" class="btn btn-sm btn-success">
+                    <i class="fas fa-plus"></i> Добавить проект
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
