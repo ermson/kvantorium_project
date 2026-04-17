@@ -1,46 +1,301 @@
 ﻿{% extends 'core/base.html' %}
 
 {% block content %}
-<div style="background-color: #1abc9c; color: white; padding: 50px; text-align: center; margin: 20px;">
-    <h1>ДАШБОРД КВАНТОРИУМА</h1>
-    <p>Если вы видите этот зелёный блок, значит шаблон работает!</p>
-    <p>Вы вошли как: {{ user.username }}</p>
-</div>
+<h2 class="mb-4"><i class="fas fa-tachometer-alt"></i> Дашборд наставника</h2>
 
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-3">
-            <div class="card text-white bg-primary">
+<!-- Подсказка для наставника -->
+{% if not is_superuser and current_mentor %}
+<div class="alert alert-info mb-4">
+    <i class="fas fa-info-circle"></i> Вы вошли как наставник.
+    Показываются только ваши ученики и их проекты.
+    <strong>{{ current_mentor.user.last_name }} {{ current_mentor.user.first_name }}</strong>
+    ({{ current_mentor.department }})
+</div>
+{% endif %}
+
+<!-- Адаптивные карточки статистики (кликабельные) -->
+<div class="row mb-4">
+    <div class="col-12 col-sm-6 col-md-3 mb-3">
+        <a href="{% url 'student_list' %}" class="text-decoration-none">
+            <div class="card text-white bg-primary card-dashboard">
                 <div class="card-body">
                     <h3>{{ students_count }}</h3>
-                    <p>Всего учеников</p>
+                    <p class="mb-0">Всего учеников</p>
                 </div>
             </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-white bg-success">
+        </a>
+    </div>
+    <div class="col-12 col-sm-6 col-md-3 mb-3">
+        <a href="{% url 'project_list' %}" class="text-decoration-none">
+            <div class="card text-white bg-success card-dashboard">
                 <div class="card-body">
                     <h3>{{ projects_count }}</h3>
-                    <p>Всего проектов</p>
+                    <p class="mb-0">Всего проектов</p>
                 </div>
             </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-white bg-warning">
+        </a>
+    </div>
+    <div class="col-12 col-sm-6 col-md-3 mb-3">
+        <a href="{% url 'project_list' %}?status=development" class="text-decoration-none">
+            <div class="card text-white bg-warning card-dashboard">
                 <div class="card-body">
                     <h3>{{ in_progress_count }}</h3>
-                    <p>Проектов в работе</p>
+                    <p class="mb-0">Проектов в работе</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-12 col-sm-6 col-md-3 mb-3">
+        <a href="{% url 'stage_list' %}?completed=not_completed" class="text-decoration-none">
+            <div class="card text-white bg-danger card-dashboard">
+                <div class="card-body">
+                    <h3>{{ urgent_stages }}</h3>
+                    <p class="mb-0">Срочных этапов</p>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Диаграммы -->
+<div class="row mb-4">
+    <div class="col-12 col-md-6 mb-3">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white py-2">
+                <h6 class="mb-0"><i class="fas fa-chart-pie"></i> Проекты по статусам</h6>
+            </div>
+            <div class="card-body py-2">
+                <div style="position: relative; height: 250px; width: 100%;">
+                    <canvas id="statusChart"></canvas>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card text-white bg-danger">
-                <div class="card-body">
-                    <h3>{{ urgent_stages }}</h3>
-                    <p>Срочных этапов</p>
+    </div>
+    <div class="col-12 col-md-6 mb-3">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white py-2">
+                <h6 class="mb-0"><i class="fas fa-chart-line"></i> Этапы по месяцам</h6>
+            </div>
+            <div class="card-body py-2">
+                <div style="position: relative; height: 250px; width: 100%;">
+                    <canvas id="stagesChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<h4 class="mt-4">Проекты, требующие внимания</h4>
+
+<!-- Таблица проектов -->
+<div class="table-wrapper">
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Проект</th>
+                <th>Ученик</th>
+                <th>Статус</th>
+                <th>Ближайший этап</th>
+                <th>До дедлайна</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for project in urgent_projects %}
+            <tr>
+                <td>
+                    <a href="{% url 'project_detail' project.id %}" class="fw-bold">
+                        {{ project.name }}
+                    </a>
+                </td>
+                <td>
+                    <a href="{% url 'student_detail' project.student.id %}">
+                        {{ project.student.last_name }} {{ project.student.first_name }}
+                    </a>
+                </td>
+                <td>
+                    <span class="badge {% if project.status == 'development' %}bg-warning{% elif project.status == 'completed' %}bg-success{% elif project.status == 'defended' %}bg-info{% else %}bg-secondary{% endif %}">
+                        {{ project.get_status_display }}
+                    </span>
+                </td>
+                <td>
+                    {% with next_stage=project.projectstage_set.all|dictsort:"planned_date"|first %}
+                        {% if next_stage and not next_stage.is_completed %}
+                            <a href="{% url 'stage_detail' next_stage.id %}">{{ next_stage.stage_name }}</a>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    {% endwith %}
+                </td>
+                <td>
+                    {% with next_stage=project.projectstage_set.all|dictsort:"planned_date"|first %}
+                        {% if next_stage and not next_stage.is_completed %}
+                            {% if next_stage.planned_date < now %}
+                                <span class="text-danger fw-bold">🔴 Просрочен</span>
+                            {% elif next_stage.planned_date == now %}
+                                <span class="text-danger fw-bold">🔥 Сегодня!</span>
+                            {% else %}
+                                {{ next_stage.planned_date|timeuntil }}
+                            {% endif %}
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    {% endwith %}
+                </td>
+                <td>
+                    <a href="{% url 'project_detail' project.id %}" class="btn btn-sm btn-primary" title="Перейти к проекту">
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="text-center">Нет проектов, требующих внимания</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Блок с последними активными этапами -->
+<h4 class="mt-5">Активные этапы (ближайшие 30 дней)</h4>
+<div class="table-wrapper">
+    <table class="table table-sm table-hover">
+        <thead class="table-secondary">
+            <tr>
+                <th>Проект</th>
+                <th>Этап</th>
+                <th>Плановая дата</th>
+                <th>До дедлайна</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for stage in urgent_stages_list %}
+            <tr class="{% if stage.planned_date < now %}table-danger{% elif stage.planned_date <= now|add:'7' %}table-warning{% endif %}">
+                <td>
+                    <a href="{% url 'project_detail' stage.project.id %}">
+                        {{ stage.project.name }}
+                    </a>
+                </a></td>
+                <td>
+                    <a href="{% url 'stage_detail' stage.id %}">
+                        {{ stage.stage_name }}
+                    </a>
+                </a></td>
+                <td>{{ stage.planned_date|date:"d.m.Y" }}</a></td>
+                <td>
+                    {% if stage.planned_date < now %}
+                        <span class="text-danger fw-bold">🔴 Просрочен</span>
+                    {% elif stage.planned_date == now %}
+                        <span class="text-danger fw-bold">🔥 Сегодня!</span>
+                    {% else %}
+                        {{ stage.planned_date|timeuntil }}
+                    {% endif %}
+                </a></td>
+                <td>
+                    <a href="{% url 'stage_edit' stage.id %}" class="btn btn-sm btn-success" title="Отметить выполненным">
+                        <i class="fas fa-check"></i> Отметить
+                    </a>
+                </a></td>
+            </a></tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="text-center text-muted">Нет активных этапов в ближайшие 30 дней</a></td>
+            </a></tr>
+            {% endfor %}
+        </tbody>
+    </a></table>
+</div>
+
+<!-- Chart.js библиотека -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+    // Данные для круговой диаграммы (статусы проектов)
+    const statusLabels = [];
+    const statusCounts = [];
+    const statusColors = [];
+
+    {% for status, count in status_counts %}
+    statusLabels.push("{{ status }}");
+    statusCounts.push({{ count }});
+    if ("{{ status }}" === "Идея") statusColors.push("#6c757d");
+    else if ("{{ status }}" === "В разработке") statusColors.push("#ffc107");
+    else if ("{{ status }}" === "На проверке") statusColors.push("#17a2b8");
+    else if ("{{ status }}" === "Завершен") statusColors.push("#28a745");
+    else if ("{{ status }}" === "Защищен") statusColors.push("#9b59b6");
+    else statusColors.push("#007bff");
+    {% endfor %}
+
+    // Данные для столбчатой диаграммы (этапы по месяцам)
+    const monthLabels = [];
+    const monthCounts = [];
+
+    {% for month, count in monthly_stages %}
+    monthLabels.push("{{ month }}");
+    monthCounts.push({{ count }});
+    {% endfor %}
+
+    // Создаём диаграммы один раз при загрузке
+    window.addEventListener('load', function() {
+        // Круговая диаграмма
+        const ctx1 = document.getElementById('statusChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'pie',
+            data: {
+                labels: statusLabels,
+                datasets: [{
+                    data: statusCounts,
+                    backgroundColor: statusColors,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { position: 'bottom', labels: { font: { size: 11 } } },
+                    tooltip: { bodyFont: { size: 12 } }
+                }
+            }
+        });
+
+        // Столбчатая диаграмма
+        const ctx2 = document.getElementById('stagesChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'bar',
+            data: {
+                labels: monthLabels,
+                datasets: [{
+                    label: 'Количество этапов',
+                    data: monthCounts,
+                    backgroundColor: '#1abc9c',
+                    borderRadius: 6,
+                    barPercentage: 0.65,
+                    categoryPercentage: 0.8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { position: 'top', labels: { font: { size: 11 } } },
+                    tooltip: { bodyFont: { size: 12 } }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Количество', font: { size: 11 } },
+                        ticks: { font: { size: 11 }, stepSize: 1, precision: 0 }
+                    },
+                    x: {
+                        title: { display: true, text: 'Месяц', font: { size: 11 } },
+                        ticks: { font: { size: 11 } }
+                    }
+                }
+            }
+        });
+    });
+</script>
 {% endblock %}

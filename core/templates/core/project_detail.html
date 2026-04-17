@@ -1,0 +1,156 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-4 gap-2">
+    <h2 class="mb-0"><i class="fas fa-project-diagram"></i> {{ project.name }}</h2>
+    <div class="d-flex gap-2">
+        <a href="{% url 'export_project_pdf' project.id %}" class="btn btn-danger btn-sm">
+            <i class="fas fa-file-pdf"></i> Скачать PDF
+        </a>
+        {% if user.is_superuser or user.username != 'metodist' %}
+        <a href="{% url 'project_edit' project.id %}" class="btn btn-warning btn-sm">
+            <i class="fas fa-edit"></i> Редактировать
+        </a>
+        {% endif %}
+        <a href="{% url 'project_list' %}" class="btn btn-secondary btn-sm">
+            <i class="fas fa-arrow-left"></i> Назад
+        </a>
+    </div>
+</div>
+
+<!-- Остальной код project_detail.html без изменений -->
+<div class="row g-3">
+    <div class="col-12 col-lg-5">
+        <div class="card shadow h-100">
+            <div class="card-header bg-primary text-white py-2">
+                <h6 class="mb-0"><i class="fas fa-info-circle"></i> Информация о проекте</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-2"><label class="fw-bold text-muted small mb-0">Название:</label><p class="mb-0">{{ project.name }}</p></div>
+                <div class="mb-2"><label class="fw-bold text-muted small mb-0">Описание:</label><p class="mb-0">{{ project.description|default:"Нет описания"|truncatechars:200 }}</p></div>
+                <div class="mb-2"><label class="fw-bold text-muted small mb-0">Статус:</label><div><span class="badge {% if project.status == 'development' %}bg-warning{% elif project.status == 'completed' %}bg-success{% elif project.status == 'defended' %}bg-info{% else %}bg-secondary{% endif %}">{{ project.get_status_display }}</span></div></div>
+                <div class="row"><div class="col-6"><label class="fw-bold text-muted small mb-0">Дата создания:</label><p class="mb-0 small">{{ project.created_at|date:"d.m.Y" }}</p></div><div class="col-6"><label class="fw-bold text-muted small mb-0">Обновление:</label><p class="mb-0 small">{{ project.updated_at|date:"d.m.Y" }}</p></div></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-7">
+        <div class="card shadow h-100">
+            <div class="card-header bg-success text-white py-2">
+                <h6 class="mb-0"><i class="fas fa-user-graduate"></i> Ученик и наставник</h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <h6 class="border-bottom pb-1 mb-2"><i class="fas fa-child"></i> Ученик</h6>
+                        <div class="mb-2"><label class="fw-bold text-muted small mb-0">ФИО:</label><p class="mb-0"><a href="{% url 'student_detail' project.student.id %}">{{ project.student.last_name }} {{ project.student.first_name }} {{ project.student.middle_name|default:"" }}</a></p></div>
+                        <div class="mb-2"><label class="fw-bold text-muted small mb-0">Направление:</label><p class="mb-0">{{ project.student.group_name }}</p></div>
+                        <div><label class="fw-bold text-muted small mb-0">Дата поступления:</label><p class="mb-0">{{ project.student.enrollment_date|date:"d.m.Y" }}</p></div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <h6 class="border-bottom pb-1 mb-2"><i class="fas fa-chalkboard-user"></i> Наставник</h6>
+                        <div class="mb-2"><label class="fw-bold text-muted small mb-0">ФИО:</label><p class="mb-0">{% if project.student.mentor %}{{ project.student.mentor.user.last_name }} {{ project.student.mentor.user.first_name }}{% else %}<span class="text-muted">Не назначен</span>{% endif %}</p></div>
+                        <div class="mb-2"><label class="fw-bold text-muted small mb-0">Квантум:</label><p class="mb-0">{{ project.student.mentor.department|default:"—" }}</p></div>
+                        <div><label class="fw-bold text-muted small mb-0">Телефон:</label><p class="mb-0">{{ project.student.mentor.phone|default:"—" }}</p></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Блок с этапами проекта -->
+<div class="card shadow mt-4">
+    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-2">
+        <h6 class="mb-0"><i class="fas fa-tasks"></i> Этапы проекта</h6>
+        {% if user.is_superuser or user.username != 'metodist' %}
+        <a href="{% url 'stage_create' %}?project={{ project.id }}" class="btn btn-sm btn-success"><i class="fas fa-plus"></i> Добавить этап</a>
+        {% endif %}
+    </div>
+    <div class="card-body p-0">
+        {% if stages %}
+        <div class="table-wrapper">
+            <table class="table table-sm table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 30%">Название</th>
+                        <th style="width: 12%">План</th>
+                        <th style="width: 12%">Факт</th>
+                        <th style="width: 10%">Статус</th>
+                        <th style="width: 15%">Дедлайн</th>
+                        <th style="width: 21%"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stage in stages %}
+                    <tr class="{% if stage.is_completed %}table-success{% elif stage.days_left < 0 %}table-danger{% elif stage.days_left <= 7 %}table-danger{% elif stage.days_left <= 30 %}table-warning{% endif %}">
+                        <td><strong>{{ stage.stage_name|truncatechars:40 }}</strong>{% if stage.comment %}<br><small class="text-muted">{{ stage.comment|truncatechars:30 }}</small>{% endif %}</a></td>
+                        <td>{{ stage.planned_date|date:"d.m.Y" }}</a></td>
+                        <td>{{ stage.actual_date|date:"d.m.Y"|default:"—" }}</a></a></td>
+                        <td>{% if stage.is_completed %}✓{% else %}○{% endif %}</a></td>
+                        <td>
+                            {% if not stage.is_completed %}
+                                {% if stage.days_left < 0 %}
+                                    <span class="text-danger fw-bold">🔴 Просрочен на {{ stage.days_left|slice:"1:" }} дн.</span>
+                                {% elif stage.days_left == 0 %}
+                                    <span class="text-danger fw-bold">🔥 Сегодня!</span>
+                                {% elif stage.days_left <= 7 %}
+                                    <span class="text-danger fw-bold">⚠️ {{ stage.days_left }} дн.</span>
+                                {% elif stage.days_left <= 30 %}
+                                    <span class="text-warning fw-bold">🕐 {{ stage.days_left }} дн.</span>
+                                {% else %}
+                                    <span class="text-secondary">{{ stage.days_left }} дн.</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-success">✓ Выполнен</span>
+                            {% endif %}
+                        </a></td>
+                        {% if user.is_superuser or user.username != 'metodist' %}
+                        <td class="text-nowrap">
+                            <a href="{% url 'stage_edit' stage.id %}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
+                            <a href="{% url 'stage_delete' stage.id %}" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></a>
+                            {% if not stage.is_completed %}
+                            <a href="{% url 'stage_mark_complete' stage.id %}" class="btn btn-sm btn-success" onclick="return confirm('Отметить выполненным?')"><i class="fas fa-check"></i></a>
+                            {% endif %}
+                        </a></td>
+                        {% else %}
+                        <td class="text-muted small text-center">—</a></td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <i class="fas fa-tasks fa-2x text-muted mb-2"></i>
+            <p class="mb-0">У этого проекта пока нет этапов.</p>
+            {% if user.is_superuser or user.username != 'metodist' %}
+            <a href="{% url 'stage_create' %}?project={{ project.id }}" class="btn btn-sm btn-primary mt-2"><i class="fas fa-plus"></i> Добавить первый этап</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card shadow mt-4">
+    <div class="card-header bg-info text-white py-2">
+        <h6 class="mb-0"><i class="fas fa-chart-line"></i> Прогресс выполнения</h6>
+    </div>
+    <div class="card-body">
+        {% with total=stages|length completed=stages|dictsort:"is_completed"|slice:":total"|length %}
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="small">Выполнено этапов:</span>
+                <span class="fw-bold">{{ completed }} из {{ total }}</span>
+            </div>
+            <div class="progress" style="height: 20px;">
+                <div class="progress-bar bg-success" role="progressbar" style="width: {% widthratio completed total 100 %}%;">{% widthratio completed total 100 %}%</div>
+            </div>
+            {% if completed == total and total > 0 %}
+            <div class="alert alert-success mt-3 text-center mb-0 py-2"><i class="fas fa-trophy"></i> Поздравляем! Все этапы выполнены!</div>
+            {% elif total == 0 %}
+            <div class="alert alert-secondary mt-3 text-center mb-0 py-2 small"><i class="fas fa-clock"></i> Добавьте этапы для отслеживания прогресса</div>
+            {% endif %}
+        {% endwith %}
+    </div>
+</div>
+{% endblock %}
